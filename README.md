@@ -8,11 +8,12 @@ It works in Claude Code, the Claude desktop and web apps, and the Claude Agent S
 
 ![Contact sheet of the example deck: 17 slides in a navy theme with amber accents, icons, cards, a process timeline, a native column chart, a table and pause-question slides](examples/M04-L02-script-a-video-lesson/preview/contact-sheet.jpg)
 
-It is the third of four skills for course creators:
+It is the third of five skills for course creators:
 - [Curriculum Designer](https://github.com/chuonglife/curriculum-designer-skill) designs the whole program.
 - [Lesson Content Writer](https://github.com/chuonglife/lesson-content-writer-skill) writes each lesson in full.
 - **Lesson Slide Designer** turns each lesson into slides and a video script.
 - [Lesson Video Producer](https://github.com/chuonglife/lesson-video-producer-skill) turns the slides and the script into a narrated, animated lesson video.
+- [Lesson Assessment Designer](https://github.com/chuonglife/lesson-assessment-designer-skill) writes the quiz, test and assignment with a rubric for each lesson, straight from its objectives.
 
 ## Contents
 
