@@ -105,7 +105,7 @@ And check that script against a ten-point list before you record.
 **Narration:**
 
 ```
-Four parts.
+Three parts.
 We start with the six principles.
 ```
 
