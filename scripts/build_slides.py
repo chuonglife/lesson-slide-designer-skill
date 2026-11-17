@@ -538,7 +538,8 @@ class Deck:
 
     def footer(self, s, color=None, bar=None):
         t = self.theme
-        self.text(s, MARGIN, H - 0.58, 8, 0.45, self.credit(), SZ_FOOT, color=color or t["muted"])
+        # optional "footer_text" overrides the footer line; without it: instructor · contact (the cover keeps instructor · contact)
+        self.text(s, MARGIN, H - 0.58, 8, 0.45, self.spec.get("footer_text") or self.credit(), SZ_FOOT, color=color or t["muted"])
         self.text(s, W - MARGIN - 1.5, H - 0.58, 1.5, 0.45, f"{self.idx}/{self.n_total}", SZ_FOOT,
                   color=color or t["muted"], align="r")
         self.rect(s, 0, H - 0.06, W * self.idx / self.n_total, 0.06, bar or t["accent"])   # progress bar
@@ -555,7 +556,8 @@ class Deck:
         t, sp = self.theme, self.spec
         s = self.new_slide()
         self.text(s, MARGIN, 0.55, W - 2 * MARGIN, 0.5, sp.get("organization", ""), SZ_CAPTION, color=t["muted"], align="c")
-        self.text(s, MARGIN, 1.05, W - 2 * MARGIN, 0.5, self.T(sp.get("course", "")), SZ_CAPTION, align="c")
+        # course name on the cover: 28 pt if it fits on one line, else stepped down to the 24 pt floor
+        self.text(s, MARGIN, 1.05, W - 2 * MARGIN, 0.5, self.T(sp.get("course", "")), 28, align="c", min_size=SZ_CAPTION)
         self.text(s, MARGIN, 2.0, W - 2 * MARGIN, 0.5, d.get("label", sp.get("lesson_code", "")), SZ_CAPTION,
                   color=t["accent"], bold=True, align="c")
         title = self.T(d.get("title", sp.get("lesson_title", "")))

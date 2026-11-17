@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.0 - 2026-11-17
+
+- New optional deck key `footer_text`: replaces the footer text on every slide except the title slide, which keeps `instructor · contact`. Without it nothing changes.
+- The course name on the title slide is now 28 pt (was the 24 pt floor) and steps down to 24 pt only if it does not fit on one line. Decks without a long course name differ from v1.1.0 only in this line on the cover.
+
 ## v1.1.0 - 2026-11-17
 
 Fixes from a first run by a new user on Windows 11 (Python 3.12 in a venv, LibreOffice and Poppler from winget).

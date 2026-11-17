@@ -12,6 +12,7 @@
   "lesson_title": "Lesson title",           // title slide heading
   "instructor": "Your name",
   "contact": "yoursite.com",                // footer: "instructor · contact"
+  "footer_text": "",                        // optional: replaces the footer text on every slide except the cover
   "language": "en",                         // any language; "en" and "vi" get extra narration checks
   "theme": "navy",                          // navy | light | forest | plum
   "title_case": "upper",                    // upper (default) | as-written
@@ -94,7 +95,7 @@ Image paths are relative to `slides.json`; PNG or JPG; the build stops when an i
 
 The prefixes, and the defaults of a language you add, are changed in `DEFAULT_TEXT` (one entry per language code). `split_videos.py` writes a few slides of its own in English whatever the language: a title slide labelled "`lesson_code` · Video k/N", objectives titled "This video's objectives" with the label "By the end of this video you can", and a closing labelled "Next" with the action "Next: Video k+1, <title>". Change the objectives and closing text in `video_settings`; for the title slide, give that video its own `title` slide with a `label`.
 
-**The footer.** Every slide except `title` carries, at the bottom, `instructor · contact` on the left (the two deck-level keys joined by " · "), the slide number "n/N" on the right, and a thin progress bar in the accent colour. The `title` slide shows `instructor · contact` centred under the visual instead. With neither key set, the footer text is empty and only the number and the bar remain. `templates/slides.example.json` and the example deck use the placeholders `"instructor": "Your name"` and `"contact": "yoursite.com"`, so a deck copied from them prints "Your name · yoursite.com" on every slide until you replace both keys and rebuild. Set them to `""` to remove the text.
+**The footer.** Every slide except `title` carries, at the bottom, `instructor · contact` on the left (the two deck-level keys joined by " · "), the slide number "n/N" on the right, and a thin progress bar in the accent colour. The `title` slide shows `instructor · contact` centred under the visual instead. The optional deck-level key `footer_text` replaces that left-hand footer text on every slide except `title`, which keeps `instructor · contact`; use it for a series name or a copyright line. With neither key nor `footer_text` set, the footer text is empty and only the number and the bar remain. `templates/slides.example.json` and the example deck use the placeholders `"instructor": "Your name"` and `"contact": "yoursite.com"`, so a deck copied from them prints "Your name · yoursite.com" on every slide until you replace both keys and rebuild. Set them to `""` to remove the text. The course name on the title slide is set at 28 pt and steps down to the 24 pt floor only when it will not fit on one line.
 
 **Orphan words.** When one word would sit alone on the last line, the script first tries the standard fix (a non-breaking space between the last two words). If that still does not fit, it stops and asks you to rewrite. You can also break a line yourself with `\n`, for example a key message `"Over ten minutes? Cut,\ndo not talk faster."`.
 
