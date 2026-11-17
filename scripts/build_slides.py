@@ -1092,8 +1092,20 @@ class Deck:
         if agendas and not self.spec.get("video_number"):
             n_parts = len(agendas[0].get("items", []))
             n_sec = sum(1 for d in self.spec["slides"] if d.get("type") == "section")
-            if n_parts >= 2 and n_sec < n_parts - 1:
-                warn(0, f"The agenda lists {n_parts} parts but there are only {n_sec} 'section' slides (need {n_parts - 1}, from part 2 on)")
+            # A part divider is a 'section' slide or the agenda repeated with "current" on part 2 or later
+            # (SKILL.md allows either). The first agenda, on part 1, opens the lesson and does not count.
+            again = set()
+            for d in agendas:
+                try:
+                    if int(d.get("current") or 0) >= 2:
+                        again.add(int(d["current"]))
+                except (TypeError, ValueError):
+                    pass
+            n_div = n_sec + len(again)
+            if n_parts >= 2 and n_div < n_parts - 1:
+                warn(0, f"The agenda lists {n_parts} parts but there are only {n_div} part dividers "
+                        f"({n_sec} 'section' slides, {len(again)} repeated agendas with \"current\" 2 or more); "
+                        f"need {n_parts - 1}, one before each part from part 2 on")
         if len(used) < 4 and self.n_total >= 8:
             warn(0, f"The whole deck uses only {len(used)} slide types; use at least 4")
 

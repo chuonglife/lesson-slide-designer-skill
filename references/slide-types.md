@@ -75,6 +75,27 @@ Limits assume 24 pt Arial on a 16:9 canvas. The script measures with the real fo
 
 Image paths are relative to `slides.json`; PNG or JPG; the build stops when an image is missing.
 
+**Text the script adds by itself.** Leave a key out and the script prints its default (from `DEFAULT_TEXT` in `scripts/build_slides.py`, by `language`; any language other than `vi` gets the English set). Know these before you write titles, or the slide says the same thing twice.
+
+| Slide | Key | Default, `en` | Default, `vi` | How to change it |
+|---|---|---|---|---|
+| `objectives` | `title` | Learning objectives | Mục tiêu bài học | set `title` |
+| `objectives` | `label` | By the end of this lesson you can | Học xong bài này, bạn làm được | set `label`; `""` hides it. Write the items so they follow it ("Sort ...", not "You can sort ...") |
+| `agenda` | `title` | What this lesson covers | Nội dung bài học | set `title` |
+| `agenda` | `label` | the deck's `lesson_code` | the deck's `lesson_code` | set `label`; `""` hides it |
+| `title` | `title`, `label` | `lesson_title`, `lesson_code` | same | set them on the slide |
+| `section` | `label` | Part | Phần | set `label` (the big number comes from `number`) |
+| `question` | `label` | Pause the video and answer | Tạm dừng video và trả lời | set `label`, for example "Ask the room" in a live class |
+| `summary` | `title` | Three things to remember | Ba từ khóa cần nhớ | set `title` |
+| `summary` | `label` | Summary | Tóm tắt | set `label`; `""` hides it |
+| `closing` | `label` | Do this next | Việc làm ngay sau bài này | set `label` |
+| `closing` | prefix of `next_lesson` | "Next lesson: " | "Bài tiếp theo: " | always added. Give only the name: `"next_lesson": "Write objectives with Bloom's verbs"`, not "Next lesson: Lesson 2: ...". Leave `next_lesson` out to drop the box |
+| `chart` | prefix of `source` | "Source: " | "Nguồn: " | always added; give only the source name |
+
+The prefixes, and the defaults of a language you add, are changed in `DEFAULT_TEXT` (one entry per language code). `split_videos.py` writes a few slides of its own in English whatever the language: a title slide labelled "`lesson_code` · Video k/N", objectives titled "This video's objectives" with the label "By the end of this video you can", and a closing labelled "Next" with the action "Next: Video k+1, <title>". Change the objectives and closing text in `video_settings`; for the title slide, give that video its own `title` slide with a `label`.
+
+**The footer.** Every slide except `title` carries, at the bottom, `instructor · contact` on the left (the two deck-level keys joined by " · "), the slide number "n/N" on the right, and a thin progress bar in the accent colour. The `title` slide shows `instructor · contact` centred under the visual instead. With neither key set, the footer text is empty and only the number and the bar remain. `templates/slides.example.json` and the example deck use the placeholders `"instructor": "Your name"` and `"contact": "yoursite.com"`, so a deck copied from them prints "Your name · yoursite.com" on every slide until you replace both keys and rebuild. Set them to `""` to remove the text.
+
 **Orphan words.** When one word would sit alone on the last line, the script first tries the standard fix (a non-breaking space between the last two words). If that still does not fit, it stops and asks you to rewrite. You can also break a line yourself with `\n`, for example a key message `"Over ten minutes? Cut,\ndo not talk faster."`.
 
 **Items read aloud.** On `summary` and `two-column` slides the items appear one at a time with the voice, so the narration of that same slide must read every item (at least half of each item's content words). Reading it on the next slide is an error too.

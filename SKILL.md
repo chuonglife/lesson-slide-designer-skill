@@ -19,6 +19,8 @@ Output, in `slides/<course>/<lesson>/` unless the user names another place:
 
 Tools the scripts use: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` (and `cairosvg` for icons, or `sharp-cli`, `rsvg-convert`, Inkscape); LibreOffice and Poppler (`pdftoppm`) to render previews; `ffmpeg` for the optional preview video. Icons are the Lucide set (ISC licence) in `assets/icons/`.
 
+**Which Python.** If the user's project has a `.venv` folder, run every script with that environment's Python: `.venv/Scripts/python` on Windows, `.venv/bin/python` on macOS and Linux. Otherwise use `python`. The commands below say `python`; swap in the venv path when there is one. If a script fails with `ModuleNotFoundError`, install `requirements.txt` into that same Python rather than into another one.
+
 ## Workflow
 
 ### Step 0. Read the source and settle the brief
@@ -26,11 +28,13 @@ Tools the scripts use: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` (and `ca
 1. Read **all** of the lesson source: objectives, audience, delivery mode, the lesson plan with minutes, the script, the questions with answers, any slide outline, handouts. If the user only gives a title, ask for the content or write it first (the companion skill `lesson-content-writer` does exactly that).
 2. Read `references/slide-standards.md` (the rules and the deck structure) and `references/slide-types.md` (the 16 types and their text limits).
 3. Settle: delivery (self-paced video, so every video is a cluster with its own open, body and close plus pause slides; or live class, so slides to ask the room and to brief practice); language (`language`, any language works, `en` and `vi` get extra checks); theme (default `navy`; one theme per course, reuse it lesson after lesson); how the instructor addresses learners (take it from the script); instructor name and contact for the footer.
+4. The footer. `instructor` and `contact` print as "instructor · contact" on the title slide and at the bottom of every slide. Take them from the source, an earlier lesson of the same course, or ask once. The template holds the placeholders "Your name" and "yoursite.com": never leave them in silently. If the user gives no name, build anyway and say clearly in the report that every slide still reads "Your name · yoursite.com" and which two keys to change. To drop the footer text, set both keys to `""`.
 
 ### Step 1. Plan the deck
 
 From the source's slide outline, or from the lesson sequence, write a table: # | type | the one idea of the slide | visual or icon | question or pause | video number. Constraints:
-- Full structure: `title` -> (`question`, a try-it-first opener, if the lesson has one) -> `objectives` -> `agenda` -> for each part a `section` (or the `agenda` again with `current`) -> 2 to 5 content slides -> at least one `question` -> `summary` -> `closing`.
+- Full structure: `title` -> (`question`, a try-it-first opener, if the lesson has one) -> `objectives` -> `agenda` -> for each part a `section` (or the `agenda` again with `current` set to that part's number) -> 2 to 5 content slides -> at least one `question` -> `summary` -> `closing`. The script counts both kinds of divider.
+- Some slide types print a default label or prefix ("By the end of this lesson you can" on `objectives`, "Next lesson: " before `next_lesson` on `closing`, and others). Check the defaults table in `slide-types.md` so the title or the text does not repeat them.
 - **One idea per slide.** At least 4 slide types per deck, never 3 of the same type in a row, a pause or question at least every 10 to 12 minutes of narration.
 - Plan the **emotional arc** and put a **rhythm breaker** at the 1/3 and 2/3 marks; write titles as **statements**, not labels (`references/rhythm-and-titles.md`). Numbers with a source go on `big-numbers` or `chart`, not in bullets.
 - Facts, terms, numbers and examples come from the lesson source only. Never invent them. Examples come from the learners' own work.
@@ -70,7 +74,7 @@ Each video gets its own folder and deck with a title slide ("Video k/N"), its ow
 
 ### Step 4. Report
 
-Give the user: the paths of the deck, the video script and the contact sheet; a short overview table (# - type - idea - seconds); slide count and estimated length; the theme; your assumptions (form of address, numbers and where they came from); warnings you left and why. Show the contact sheet.
+Give the user: the paths of the deck, the video script and the contact sheet; a short overview table (# - type - idea - seconds); slide count and estimated length; the theme; your assumptions (form of address, numbers and where they came from); warnings you left and why; and, if the footer still reads "Your name · yoursite.com", a line telling the user to change `instructor` and `contact` in `slides.json` and rebuild. Show the contact sheet.
 
 ## Several lessons in a row
 

@@ -69,25 +69,70 @@ A slide in `slides.json` looks like this:
 
 ## Install
 
+Run these from the folder of your course project. Each block clones the skill, makes a Python virtual environment `.venv` inside the project and installs the requirements into it, so nothing touches your system Python. The skill tells Claude to use `.venv` when it finds one.
+
 **Claude Code (personal, all projects)**
+
+macOS and Linux (bash or zsh):
 
 ```bash
 git clone https://github.com/chuonglife/lesson-slide-designer-skill ~/.claude/skills/lesson-slide-designer
-pip install -r ~/.claude/skills/lesson-slide-designer/requirements.txt
+python3 -m venv .venv
+.venv/bin/python -m pip install -r ~/.claude/skills/lesson-slide-designer/requirements.txt
+```
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/chuonglife/lesson-slide-designer-skill "$HOME\.claude\skills\lesson-slide-designer"
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r "$HOME\.claude\skills\lesson-slide-designer\requirements.txt"
 ```
 
 **Claude Code (one project only)**
 
+macOS and Linux (bash or zsh):
+
 ```bash
 git clone https://github.com/chuonglife/lesson-slide-designer-skill .claude/skills/lesson-slide-designer
-pip install -r .claude/skills/lesson-slide-designer/requirements.txt
+python3 -m venv .venv
+.venv/bin/python -m pip install -r .claude/skills/lesson-slide-designer/requirements.txt
 ```
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/chuonglife/lesson-slide-designer-skill .claude\skills\lesson-slide-designer
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r .claude\skills\lesson-slide-designer\requirements.txt
+```
+
+Already have a `.venv` from another skill? Skip the `venv` line and install into the same one. Installing takes about a minute. If you use the skill in several projects, make a `.venv` in each, or point Claude at one you already have.
 
 **Claude desktop or web app**
 
 Download `lesson-slide-designer.skill` from the [latest release](https://github.com/chuonglife/lesson-slide-designer-skill/releases/latest) and add it under Settings, Capabilities, Skills.
 
-**Requirements**: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` and `cairosvg` (installed by `requirements.txt`; `sharp-cli`, `rsvg-convert` or Inkscape also work for icons). To render the preview images: [LibreOffice](https://www.libreoffice.org/) and Poppler (`pdftoppm`). For the optional preview video: `ffmpeg`. Text is measured with Arial, or Liberation Sans on Linux.
+**Requirements**: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` and `cairosvg` (installed by `requirements.txt`; `sharp-cli`, `rsvg-convert` or Inkscape also work for icons). To render the preview images: LibreOffice and Poppler (`pdftoppm`). For the optional preview video: `ffmpeg`.
+
+**LibreOffice and Poppler** turn the deck into preview images. Without them the deck still builds, but neither you nor Claude can look at the slides, so install both.
+
+| System | Command |
+|---|---|
+| Windows | `winget install --id TheDocumentFoundation.LibreOffice -e` and `winget install --id oschwartz10612.Poppler -e` |
+| macOS (Homebrew) | `brew install --cask libreoffice` and `brew install poppler` |
+| Debian, Ubuntu | `sudo apt install libreoffice-impress poppler-utils` |
+| Fedora | `sudo dnf install libreoffice-impress poppler-utils` |
+
+Then close and reopen the terminal (and Claude Code) so the new PATH is picked up, and check:
+
+```
+pdftoppm -v
+```
+
+On Windows, winget's Poppler package unpacks a zip and adds its `bin` folder to PATH; if `pdftoppm -v` still says "not recognized" after a new terminal, add the folder that holds `pdftoppm.exe` (under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\oschwartz10612.Poppler_...\poppler-<version>\Library\bin`) to your user PATH by hand. LibreOffice does not need to be on PATH: `render_slides.py` finds it in its usual install folder (`C:\Program Files\LibreOffice`, `/Applications/LibreOffice.app`, `/usr/bin`).
+
+**Fonts.** Decks use Arial, and the script measures every line with the real Arial font file to decide what fits. Windows and macOS have Arial already. On Linux install the Microsoft core fonts (`sudo apt install ttf-mscorefonts-installer`) or Liberation Sans, which has the same widths (`sudo apt install fonts-liberation`; Fedora: `liberation-sans-fonts`). Without either, the build warns "Arial (or Liberation Sans) not found" and the fit checks are only estimates. To use a brand font instead, see the FAQ.
 
 ## Use it
 
@@ -111,6 +156,8 @@ Build the slides and the video script, one video per topic, 10 minutes max each.
 ```
 Here is my lesson plan in Vietnamese. Make the slides in Vietnamese, plum theme.
 ```
+
+Give your name and your site (or school, or brand) in the first request, for example "footer: Jane Doe · janedoe.com". Without them every slide reads "Your name · yoursite.com" until you change `instructor` and `contact` in `slides.json` and rebuild. Claude will remind you.
 
 To do a whole course, ask for one lesson at a time. The skill reuses the theme, the footer and the icon-per-concept set from the earlier lessons so the course looks like one piece.
 
@@ -223,6 +270,7 @@ Yes. MIT license. The Lucide icons are under the ISC license (`assets/icons/LICE
 
 ```
 SKILL.md                                    instructions Claude follows
+CHANGELOG.md                                what changed in each release
 references/slide-standards.md               the ten rules, deck structure, multimedia principles, checklist
 references/slide-types.md                   slides.json format, 16 slide types and limits, themes, icons
 references/narration-and-video-script.md    narration for text-to-speech, production notes, video hand-over
