@@ -334,7 +334,7 @@ Remember those three and you can write your first script tonight.
 ### S17 · closing · 18 s
 
 **On screen:**
-- Write the script for one lesson of your course, then check it against the ten-point list.
+- Write the script for one lesson of your course, then check it against the ten-point list within seven days.
 - Module 4, Lesson 3: record and edit
 
 **Narration:**

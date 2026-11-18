@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.0 - 2026-11-18
+
+- A label and its number ("Stage 4", "Lesson 3", "Step 2", "Part 1") now stay together across a line break, in every language, so a number never drops to a line of its own.
+- New warning: the narration says a quantity ("ten questions", "twenty minutes") that no text on the slide carries. Anything the learner must do or reach has to be on screen.
+- New warning: the narration says an item is required or mandatory but the slide does not.
+- New warnings for patterns that confuse viewers: a total or overall figure inside a `process` slide (use `cards`), a title that promises a count that differs from the list under it, a "this lesson" question in a multi-video lesson with no scope, a slide missing from the middle of an "X N of M" label chain.
+- The example closing slide now writes "within seven days" on screen, as its narration says.
+
 ## v1.2.0 - 2026-11-17
 
 - New optional deck key `footer_text`: replaces the footer text on every slide except the title slide, which keeps `instructor · contact`. Without it nothing changes.

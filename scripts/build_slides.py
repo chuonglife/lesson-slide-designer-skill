@@ -137,7 +137,7 @@ def check_voice(idx, text, where, lang):
 EN_NUM = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
           "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
           "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30,
-          "forty": 40, "fifty": 50, "sixty": 60, "ninety": 90}
+          "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
 VI_NUM = {"không": 0, "một": 1, "hai": 2, "ba": 3, "bốn": 4, "tư": 4, "năm": 5, "sáu": 6, "bảy": 7, "tám": 8,
           "chín": 9, "mười": 10, "lăm": 5}
 
@@ -184,6 +184,22 @@ def seconds_in_text(text):
             if v is not None:
                 out.add(v * (60 if m.group(2).startswith(("min", "phút")) else 1))
                 break
+    return out
+
+
+SPOKEN_UNITS_EN = (r"(?:minutes?|seconds?|hours?|days?|weeks?|questions?|videos?|lessons?|files?|sheets?|pages?|"
+                   r"stages?|steps?|skills?|prompts?|points?|slides?|modules?|objectives?|options?|tasks?|worksheets?|"
+                   r"criteria|items?|checks?|rules?)")
+
+
+def quantities_in_narration(narr):
+    """[(number, phrase)] for '<number in words> <unit>' in English narration, e.g. 'ten questions'."""
+    ds = "|".join(sorted(EN_NUM, key=len, reverse=True))
+    out = []
+    for m in re.finditer(r"(?<![a-z])((?:%s)(?:[- ](?:%s))?) (%s)(?![a-z])" % (ds, ds, SPOKEN_UNITS_EN), str(narr).lower()):
+        v = _en_tokens_to_num(m.group(1).replace("-", " ").split())
+        if v is not None:
+            out.append((v, m.group(0)))
     return out
 
 
@@ -307,10 +323,17 @@ VI_COMPOUNDS = ["sơ đồ", "người học", "học viên", "mục tiêu", "k�
 _RE_VI_COMPOUNDS = re.compile("|".join(re.escape(x) for x in sorted(VI_COMPOUNDS, key=len, reverse=True)), re.I)
 
 
+# A label and its number ("Stage 4", "Lesson 3", "Step 2") never split across two lines, in any language
+_RE_LABEL_NUM = re.compile(r"\b(?:Stage|Lesson|Video|Step|Product|Module|Track|Part|Week|Day|Unit|Task|Bài|Bước|Phần) \d+", re.I)
+
+
 def keep_compounds(s, lang):
-    if lang != "vi" or not isinstance(s, str):
+    if not isinstance(s, str):
         return s
-    return _RE_VI_COMPOUNDS.sub(lambda m: m.group(0).replace(" ", NBSP), s)
+    s = _RE_LABEL_NUM.sub(lambda m: m.group(0).replace(" ", NBSP), s)
+    if lang == "vi":
+        s = _RE_VI_COMPOUNDS.sub(lambda m: m.group(0).replace(" ", NBSP), s)
+    return s
 
 
 def fits(text, width_in, height_in, pt, spacing=1.2, bold=False):
@@ -1065,6 +1088,7 @@ class Deck:
             self.blocks.append(dict(idx=self.idx, type=k, layout=layout, visible=[v for v in visible if v],
                                     narration=narr, notes=d.get("notes", ""), dur=dur, video=d.get("video")))
         self.check_items_read()
+        self.check_repeats()
         if self.n_total >= 9:
             kinds = [b["type"] for b in self.blocks]
             for mark in (self.n_total / 3, 2 * self.n_total / 3):
@@ -1110,6 +1134,36 @@ class Deck:
                         f"need {n_parts - 1}, one before each part from part 2 on")
         if len(used) < 4 and self.n_total >= 8:
             warn(0, f"The whole deck uses only {len(used)} slide types; use at least 4")
+
+    def check_repeats(self):
+        """Warnings for patterns that confuse viewers: process slides holding totals, a title count that disagrees
+        with the list, an ambiguous 'this lesson' question in a multi-video lesson, and broken 'X N of M' label chains."""
+        sl = self.spec["slides"]
+        nums = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+
+        def shown(d):
+            return json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False)
+        for i, d in enumerate(sl):
+            k = d.get("type")
+            if k == "process":
+                for st in d.get("steps", []) or []:
+                    t = (st if isinstance(st, str) else json.dumps(st, ensure_ascii=False)).lower()
+                    if re.search(r"\b(total|in all|overall)\b", t):
+                        warn(i + 1, "A 'process' slide shows sequential steps; a total or overall figure is not a step. Use 'cards' for it")
+                        break
+            m = re.search(r"\b(one|two|three|four|five|six)\s+(?:[\w-]+\s+)?(duties|steps|files|products|skills|words|stages|ways|things|questions|rules|mistakes)\b",
+                          str(d.get("title", "")).lower())
+            if m:
+                n = nums[m.group(1)]
+                lst = d.get("items") if k == "two-column" else (d.get("cards") if k == "cards" else None)
+                if isinstance(lst, list) and lst and len(lst) != n:
+                    warn(i + 1, f"The title promises {n} but the slide lists {len(lst)}: the count in the title must match the main list")
+            if k == "question" and re.search(r"this lesson", str(d.get("question", "")).lower())                     and not re.search(r"videos? \d|video (one|two|three|four|five)", str(d.get("question", "")).lower())                     and len(self.spec.get("videos") or []) > 1:
+                warn(i + 1, "The question says 'this lesson' in a lesson with several videos; name the scope (for example 'videos 1 to 3')")
+        has = [bool(re.search(r"\w+ \d+ of \d+", shown(d), re.I)) for d in sl]
+        for i, d in enumerate(sl):
+            if not has[i] and 0 < i < len(sl) - 1 and has[i - 1] and has[i + 1]                     and sl[i - 1].get("type") == d.get("type") == sl[i + 1].get("type"):
+                warn(i + 1, "This slide sits inside a chain of 'X N of M' labels but has none: keep the label pattern across the chain")
 
     def _content_words(self, text):
         stop = self.STOP.get(self.lang, self.STOP["en"])
@@ -1163,6 +1217,20 @@ class Deck:
                 if phrase not in self._said + " " + low[:m.start()] + " " + on_screen:
                     err(self.idx, f"\"{m.group(0)}\" points back at \"{phrase}\" before they were named: listeners cannot tell what it refers to")
         self._said += " " + low
+        # A quantity the learner must act on (minutes, questions, files...) is spoken but appears nowhere on the slide
+        if d.get("type") in ("objectives", "cards", "key-message", "question", "big-numbers", "table", "summary", "closing"):
+            shown = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
+            nums = {int(x) for x in re.findall(r"\d+", shown)} | {EN_NUM[w] for w in re.findall(r"[a-z]+", shown) if w in EN_NUM}
+            nums |= {a + b for a in nums for b in nums if a in (20, 30, 40, 50, 60, 70, 80, 90) and 0 < b < 10}
+            if self.lang == "en":
+                for n, phrase in quantities_in_narration(narr):
+                    if n not in nums and phrase not in shown:
+                        warn(self.idx, f"The narration says \"{phrase}\" but no text on the slide carries the number {n}: "
+                                       "anything the learner must do or reach has to be written on screen")
+        # "required" / "mandatory" said aloud must also be visible on the slide
+        shown_all = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
+        if d.get("type") in ("cards", "table", "process", "two-column", "key-message", "summary")                 and re.search(r"\b(mandatory|required|bắt buộc)\b", low) and not re.search(r"\b(mandatory|required|bắt buộc)\b", shown_all):
+            warn(self.idx, "The narration says the item is required or mandatory but the slide never does: a shortened card lost that part")
         for line in narr.splitlines():
             line = line.strip()
             if line and line[-1] not in ".,?!":

@@ -54,7 +54,7 @@ Copy `templates/slides.example.json` and fill it from the plan. For every slide:
 ```bash
 python scripts/build_slides.py slides/<course>/<lesson>/slides.json
 ```
-The script STOPS on hard violations: more than 6 lines, text that does not fit at 24 pt, an orphan word that cannot be fixed by pulling two words together, a missing icon or image, an unknown type, a banned dash or stock AI phrase, a timer label that disagrees with the narration, an item the narration never reads. Fix `slides.json` and rebuild until there are **0 errors**. Read every warning too (long lines, digits in narration, three slides of one type in a row, no rhythm breaker, thin videos) and fix it or note why not.
+The script STOPS on hard violations: more than 6 lines, text that does not fit at 24 pt, an orphan word that cannot be fixed by pulling two words together, a missing icon or image, an unknown type, a banned dash or stock AI phrase, a timer label that disagrees with the narration, an item the narration never reads. Fix `slides.json` and rebuild until there are **0 errors**. Read every warning too (long lines, digits in narration, three slides of one type in a row, no rhythm breaker, thin videos, a quantity in the narration that the slide never shows, "required" said aloud but not written, a title count that disagrees with its list, a total inside a process slide) and fix it or note why not.
 
 ```bash
 python scripts/render_slides.py slides/<course>/<lesson>/<file_name>.pptx
