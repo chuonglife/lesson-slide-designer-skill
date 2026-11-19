@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.3.1 - 2026-11-19
+
+Fixes from an audit that followed the README on a clean machine.
+
+- The build no longer needs an SVG rasterizer. Before, `requirements.txt` installed `cairosvg`, which needs the native Cairo library; on Windows that library was only there when Poppler's `bin` folder was on PATH, so a new user got "No SVG rasterizer found. Install one: pip install cairosvg" with `cairosvg` already installed, and no deck. The 125 icons now ship pre-rendered in `assets/icons/png/` and are tinted with Pillow. The icons keep the size and shape `cairosvg` gave them (same alpha channel; the colour differs by at most 2 in 255 on edge pixels).
+- `requirements.txt` drops `cairosvg`. An SVG icon you add yourself is still rasterized at build time, by the first of `resvg-py`, `cairosvg`, `sharp-cli`, `rsvg-convert`, Inkscape; when none works the error says why each one failed and how to install one. `build_slides.py --prerender-icons` writes the PNG for new SVG icons.
+- `templates/slides.example.json` now matches the example deck (the closing slide says "within seven days"), so the template builds with 0 warnings. v1.3.0 had changed only the example.
+- `--help` exits with code 0 in every script, and `split_videos.py --help` prints its full description.
+- Clear messages in place of tracebacks: a `slides.json` or `.pptx` that does not exist, invalid JSON, a LibreOffice conversion that fails (its own error text is shown). `render_slides.py` checks for LibreOffice and `pdftoppm` before it starts, and the messages for missing LibreOffice, Poppler and ffmpeg give the install command.
+- README: a table of what to have before installing (Git, Python, Claude Code) with a check command and a link for each; a note for Git Bash on Windows; `python3-venv` on Debian and Ubuntu; what LibreOffice and Poppler each do; where to change the font (`FONT`, `FONT_FILES`); the icon count is 125, not 126. The claim about the Claude desktop and web apps now says what is needed there and that it is untested.
+- SKILL.md: says where the `scripts/` folder is relative to the user's project, so the commands run as written.
+
+- **Linux without Arial: the false "does not fit" errors now explain themselves.** Without Arial or Liberation Sans the width estimate is rough and the build refused the shipped template. The error list now starts with the cause and the install command, and `fonts-liberation` is in the Debian and Ubuntu install line.
+
 ## v1.3.0 - 2026-11-18
 
 - A label and its number ("Stage 4", "Lesson 3", "Step 2", "Part 1") now stay together across a line break, in every language, so a number never drops to a line of its own.

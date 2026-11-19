@@ -17,7 +17,9 @@ Output, in `slides/<course>/<lesson>/` unless the user names another place:
 | `_preview/slide-NN.png`, `_preview/contact-sheet.png` | 1920x1080 images of every slide and a contact sheet, for your own visual check and as frames for a video |
 | `<file_name>.preview.mp4` (optional) | A silent slideshow at the scripted timings, or a narrated one when per-slide audio exists |
 
-Tools the scripts use: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` (and `cairosvg` for icons, or `sharp-cli`, `rsvg-convert`, Inkscape); LibreOffice and Poppler (`pdftoppm`) to render previews; `ffmpeg` for the optional preview video. Icons are the Lucide set (ISC licence) in `assets/icons/`.
+Tools the scripts use: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` (all in `requirements.txt`) to build; LibreOffice (deck to PDF) and Poppler's `pdftoppm` (PDF to PNG) to render previews; `ffmpeg` for the optional preview video. Icons are the Lucide set (ISC licence) in `assets/icons/`, shipped pre-rendered in `assets/icons/png/`, so a build needs no SVG tool. Only an SVG icon the user adds needs a rasterizer; the build error lists the choices (`pip install resvg-py` is the simplest). When a script says a tool is missing, give the user the install command it prints, do not work around it.
+
+**Where the scripts are.** `scripts/`, `references/`, `templates/` and `assets/` are folders of this skill, next to this file. Run the commands below from the user's project root and put the skill folder in front of `scripts/`, for example `.claude/skills/lesson-slide-designer/scripts/build_slides.py` (project install) or `~/.claude/skills/lesson-slide-designer/scripts/build_slides.py` (personal install). The `slides/...` paths are relative to the project root.
 
 **Which Python.** If the user's project has a `.venv` folder, run every script with that environment's Python: `.venv/Scripts/python` on Windows, `.venv/bin/python` on macOS and Linux. Otherwise use `python`. The commands below say `python`; swap in the venv path when there is one. If a script fails with `ModuleNotFoundError`, install `requirements.txt` into that same Python rather than into another one.
 

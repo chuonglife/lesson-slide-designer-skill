@@ -8,7 +8,8 @@ Usage:
 
 Creates <output>/slide-NN.png for each slide and <output>/contact-sheet.png (3 columns) for a quick
 overview. The default output folder is "_preview" next to the deck.
-Needs LibreOffice (soffice) and pdftoppm (Poppler).
+Needs LibreOffice (soffice, turns the deck into a PDF) and Poppler (pdftoppm, turns the PDF pages into PNGs).
+The PDF stays in the output folder next to the images.
 """
 import glob
 import os
@@ -37,14 +38,24 @@ def find_soffice():
     for c in SOFFICE_CANDIDATES:
         if c and os.path.isfile(c):
             return c
-    raise SystemExit("LibreOffice (soffice) not found. Install it from https://www.libreoffice.org/")
+    raise SystemExit("LibreOffice (soffice) not found. Install it (Windows: winget install --id "
+                     "TheDocumentFoundation.LibreOffice -e, macOS: brew install --cask libreoffice, "
+                     "Linux: libreoffice-impress) or get it from https://www.libreoffice.org/")
 
 
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(__doc__)
-        sys.exit(2)
+        sys.exit(0 if len(sys.argv) > 1 else 2)
     pptx = os.path.abspath(sys.argv[1])
+    if not os.path.isfile(pptx):
+        raise SystemExit(f"File not found: {pptx}")
+    soffice = find_soffice()
+    pdftoppm = shutil.which("pdftoppm")
+    if not pdftoppm:
+        raise SystemExit("pdftoppm not found. Install Poppler (Windows: winget install --id oschwartz10612.Poppler -e, "
+                         "macOS: brew install poppler, Linux: poppler-utils), open a new terminal and check "
+                         "with: pdftoppm -v")
     out = os.path.abspath(sys.argv[2]) if len(sys.argv) > 2 else os.path.join(os.path.dirname(pptx), "_preview")
     os.makedirs(out, exist_ok=True)
     for old in glob.glob(os.path.join(out, "slide-*.png")):
@@ -52,17 +63,21 @@ def main():
     # A private LibreOffice profile per run: parallel runs on one shared profile fight over a lock and fail.
     prof = tempfile.mkdtemp(prefix="lo_profile_")
     uri = "file:///" + prof.replace("\\", "/").lstrip("/")
+    pdf = os.path.join(out, os.path.splitext(os.path.basename(pptx))[0] + ".pdf")
+    if os.path.isfile(pdf):
+        os.remove(pdf)
     try:
-        subprocess.run([find_soffice(), f"-env:UserInstallation={uri}", "--headless", "--convert-to", "pdf",
-                        "--outdir", out, pptx], check=True, capture_output=True)
+        r = subprocess.run([soffice, f"-env:UserInstallation={uri}", "--headless", "--convert-to", "pdf",
+                            "--outdir", out, pptx], capture_output=True)
     finally:
         shutil.rmtree(prof, ignore_errors=True)
-    pdf = os.path.join(out, os.path.splitext(os.path.basename(pptx))[0] + ".pdf")
-    pdftoppm = shutil.which("pdftoppm")
-    if not pdftoppm:
-        raise SystemExit("pdftoppm not found. Install Poppler (poppler-utils).")
-    subprocess.run([pdftoppm, "-png", "-r", "144", "-scale-to-x", "1920", "-scale-to-y", "1080", pdf,
-                    os.path.join(out, "slide")], check=True, capture_output=True)
+    if r.returncode or not os.path.isfile(pdf):
+        raise SystemExit("LibreOffice could not convert the deck to PDF.\n"
+                         + (r.stderr or r.stdout or b"").decode("utf-8", "replace").strip()[-600:])
+    r = subprocess.run([pdftoppm, "-png", "-r", "144", "-scale-to-x", "1920", "-scale-to-y", "1080", pdf,
+                        os.path.join(out, "slide")], capture_output=True)
+    if r.returncode:
+        raise SystemExit("pdftoppm failed.\n" + (r.stderr or b"").decode("utf-8", "replace").strip()[-600:])
     files = sorted(glob.glob(os.path.join(out, "slide-*.png")))
     renamed = []
     for i, f in enumerate(files, 1):

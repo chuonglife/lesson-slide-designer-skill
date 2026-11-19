@@ -35,13 +35,17 @@ def audio_seconds(path):
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(__doc__)
-        sys.exit(2)
+        sys.exit(0 if len(sys.argv) > 1 else 2)
     src = os.path.abspath(sys.argv[1])
     args = sys.argv[2:]
     audio = os.path.abspath(args[args.index("--audio") + 1]) if "--audio" in args else None
     out = os.path.abspath(args[args.index("--out") + 1]) if "--out" in args else None
-    if not shutil.which("ffmpeg"):
-        raise SystemExit("ffmpeg not found.")
+    if not os.path.isfile(src):
+        raise SystemExit(f"File not found: {src}")
+    for tool in ("ffmpeg", "ffprobe"):
+        if not shutil.which(tool):
+            raise SystemExit(f"{tool} not found. Install ffmpeg (Windows: winget install --id Gyan.FFmpeg -e, "
+                             "macOS: brew install ffmpeg, Linux: ffmpeg) and open a new terminal.")
     base = os.path.dirname(src)
     spec = json.load(open(src, encoding="utf-8"))
     name = spec.get("file_name") or os.path.splitext(os.path.basename(src))[0]

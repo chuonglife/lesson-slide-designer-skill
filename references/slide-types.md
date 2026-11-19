@@ -117,7 +117,9 @@ Useful groups:
 - **Communication**: message-circle message-square mail phone send share-2 megaphone bell link globe
 - **Other**: quote type text list tag bookmark shield lock key gift coffee home building briefcase dollar-sign map-pin sun moon leaf flame droplet database cloud download upload printer keyboard mouse-pointer ruler palette plus minus divide equal
 
-Need another icon? Copy its SVG from the Lucide set (https://lucide.dev) into `assets/icons/` under the same name.
+Every icon above also ships as a 512 px PNG in `assets/icons/png/`; the build tints that PNG with Pillow and needs no SVG tool.
+
+Need another icon? Copy its SVG from the Lucide set (https://lucide.dev) into `assets/icons/` under the same name. An icon without a PNG is rasterized from its SVG at build time, which needs one SVG rasterizer on the machine: `pip install resvg-py` (Python 3.10 or newer) is the simplest, and `cairosvg`, `sharp-cli`, `rsvg-convert` and Inkscape also work. `python scripts/build_slides.py --prerender-icons` then writes the PNG for every new SVG, so later builds need no rasterizer. If you replace an SVG that already has a PNG, delete that PNG first.
 
 ## 6. A short example
 

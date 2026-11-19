@@ -6,6 +6,7 @@ Build a lesson slide deck (.pptx) and a video script (.md) from one slides.json 
 Usage:
   python build_slides.py <path/to/slides.json> [output folder]
   python build_slides.py <path/to/slides.json> --check-only     (run every check, write nothing)
+  python build_slides.py --prerender-icons                      (maintenance: a PNG for each new SVG icon)
 
 Output (default: the folder of slides.json):
   <file_name>.pptx              16:9 deck, the narration of each slide in its speaker notes
@@ -42,6 +43,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 SKILL_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ICON_DIR = os.path.join(SKILL_DIR, "assets", "icons")
+ICON_PNG_DIR = os.path.join(ICON_DIR, "png")
 
 # ----------------------------------------------------------------------------
 # Design constants
@@ -354,28 +356,79 @@ def words(text):
 
 
 # ----------------------------------------------------------------------------
-# Lucide icons -> coloured PNG (cairosvg, sharp-cli, rsvg-convert or Inkscape), cached per deck
+# Lucide icons -> coloured PNG, cached per deck.
+# Every bundled icon ships pre-rendered in assets/icons/png/ (512 px, shape in the alpha channel) and is
+# tinted with Pillow, so a build needs no SVG rasterizer. Only an icon you add yourself as an SVG is
+# rasterized here, with the first tool found: resvg-py, cairosvg, sharp-cli, rsvg-convert, Inkscape.
 # ----------------------------------------------------------------------------
 _icon_cache = {}
+ICON_PX = 512
+RASTERIZER_HELP = (
+    "Install one of these, then build again:\n"
+    "  pip install resvg-py          (Python 3.10 or newer, nothing else needed)\n"
+    "  pip install cairosvg          (also needs the Cairo library: Windows gets it with Poppler when Poppler's\n"
+    "                                 bin folder is on PATH, macOS: brew install cairo, Linux: libcairo2)\n"
+    "  npm install -g sharp-cli      (needs Node.js)\n"
+    "  rsvg-convert or Inkscape on PATH\n"
+    "The icons that ship with the skill need none of these.")
+
+
+def _first_line(e):
+    text = str(e).strip()
+    return text.splitlines()[0][:120] if text else type(e).__name__
+
+
+def _tint(mask_png, color, png_path):
+    """Pre-rendered icon (shape in the alpha channel) -> the same icon in one flat colour."""
+    with Image.open(mask_png) as im:
+        alpha = im.convert("RGBA").getchannel("A")
+    r, g, b = (int(color[i:i + 2], 16) for i in (0, 2, 4))
+    out = Image.new("RGBA", alpha.size, (r, g, b, 0))
+    out.putalpha(alpha)
+    out.save(png_path)
 
 
 def _rasterize(svg_path, png_path):
+    """SVG -> PNG with the first rasterizer that works. Returns (ok, why each one before it failed)."""
+    tried = []
+    try:
+        import resvg_py
+        with open(svg_path, encoding="utf-8") as f:
+            data = resvg_py.svg_to_bytes(svg_string=f.read(), width=ICON_PX, height=ICON_PX)
+        with open(png_path, "wb") as f:
+            f.write(bytes(data))
+        return True, tried
+    except ImportError:
+        tried.append("resvg-py: not installed")
+    except Exception as e:
+        tried.append(f"resvg-py: {_first_line(e)}")
     try:
         import cairosvg
-        cairosvg.svg2png(url=svg_path, write_to=png_path, output_width=512, output_height=512)
-        return True
-    except Exception:
-        pass
-    for exe, args in (("sharp", ["-i", svg_path, "-o", png_path, "resize", "512", "512"]),
-                      ("sharp.cmd", ["-i", svg_path, "-o", png_path, "resize", "512", "512"]),
-                      ("rsvg-convert", ["-w", "512", "-h", "512", "-o", png_path, svg_path]),
-                      ("inkscape", [svg_path, "--export-type=png", f"--export-filename={png_path}", "-w", "512", "-h", "512"])):
-        path = shutil.which(exe)
-        if path:
-            r = subprocess.run([path] + args, capture_output=True)
-            if r.returncode == 0 and os.path.isfile(png_path):
-                return True
-    return False
+        cairosvg.svg2png(url=svg_path, write_to=png_path, output_width=ICON_PX, output_height=ICON_PX)
+        return True, tried
+    except ImportError:
+        tried.append("cairosvg: not installed")
+    except OSError as e:
+        tried.append("cairosvg: installed, but the Cairo library it needs was not found"
+                     if "cairo" in str(e).lower() else f"cairosvg: {_first_line(e)}")
+    except Exception as e:
+        tried.append(f"cairosvg: {_first_line(e)}")
+    size = str(ICON_PX)
+    for label, exes, args in (
+            ("sharp-cli", ("sharp", "sharp.cmd"), ["-i", svg_path, "-o", png_path, "resize", size, size]),
+            ("rsvg-convert", ("rsvg-convert",), ["-w", size, "-h", size, "-o", png_path, svg_path]),
+            ("Inkscape", ("inkscape",), [svg_path, "--export-type=png", f"--export-filename={png_path}",
+                                         "-w", size, "-h", size])):
+        path = next((w for w in (shutil.which(x) for x in exes) if w), None)
+        if not path:
+            tried.append(f"{label}: not on PATH")
+            continue
+        r = subprocess.run([path] + args, capture_output=True)
+        if r.returncode == 0 and os.path.isfile(png_path):
+            return True, tried
+        msg = (r.stderr or r.stdout or b"").decode("utf-8", "replace").strip().splitlines()
+        tried.append(f"{label}: failed ({msg[-1][:120] if msg else 'exit code ' + str(r.returncode)})")
+    return False, tried
 
 
 def icon_png(name, color, out_dir):
@@ -383,24 +436,58 @@ def icon_png(name, color, out_dir):
     if key in _icon_cache:
         return _icon_cache[key]
     svg = os.path.join(ICON_DIR, f"{name}.svg")
-    if not os.path.isfile(svg):
+    mask = os.path.join(ICON_PNG_DIR, f"{name}.png")
+    if not os.path.isfile(svg) and not os.path.isfile(mask):
         return None
     cache_dir = os.path.join(out_dir, "_icons")
     os.makedirs(cache_dir, exist_ok=True)
     png = os.path.join(cache_dir, f"{name}-{color}.png")
     if not os.path.isfile(png):
-        with open(svg, encoding="utf-8") as f:
-            data = f.read().replace("currentColor", f"#{color}")
-        tmp_svg = os.path.join(cache_dir, f"{name}-{color}.svg")
-        with open(tmp_svg, "w", encoding="utf-8") as f:
-            f.write(data)
-        ok = _rasterize(tmp_svg, png)
-        os.remove(tmp_svg)
-        if not ok:
-            raise SystemExit("No SVG rasterizer found. Install one: pip install cairosvg  (or npm i -g sharp-cli, "
-                             "or rsvg-convert / Inkscape).")
+        if os.path.isfile(mask):
+            _tint(mask, color, png)
+        else:
+            with open(svg, encoding="utf-8") as f:
+                data = f.read().replace("currentColor", f"#{color}")
+            tmp_svg = os.path.join(cache_dir, f"{name}-{color}.svg")
+            with open(tmp_svg, "w", encoding="utf-8") as f:
+                f.write(data)
+            ok, tried = _rasterize(tmp_svg, png)
+            os.remove(tmp_svg)
+            if not ok:
+                raise SystemExit(
+                    f"Icon \"{name}\" has no pre-rendered PNG in assets/icons/png/, so its SVG has to be "
+                    "rasterized, and no SVG rasterizer works on this machine:\n"
+                    + "\n".join("  - " + t for t in tried) + "\n" + RASTERIZER_HELP)
     _icon_cache[key] = png
     return png
+
+
+def prerender_icons():
+    """Maintenance: write assets/icons/png/<name>.png for every SVG that has none (needs a rasterizer once)."""
+    os.makedirs(ICON_PNG_DIR, exist_ok=True)
+    made = 0
+    for fn in sorted(os.listdir(ICON_DIR)):
+        if not fn.endswith(".svg"):
+            continue
+        mask = os.path.join(ICON_PNG_DIR, fn[:-4] + ".png")
+        if os.path.isfile(mask):
+            continue
+        with open(os.path.join(ICON_DIR, fn), encoding="utf-8") as f:
+            data = f.read().replace("currentColor", "#FFFFFF")
+        tmp_svg = mask[:-4] + ".tmp.svg"
+        with open(tmp_svg, "w", encoding="utf-8") as f:
+            f.write(data)
+        ok, tried = _rasterize(tmp_svg, mask)
+        os.remove(tmp_svg)
+        if not ok:
+            raise SystemExit(f"Cannot rasterize {fn}:\n" + "\n".join("  - " + t for t in tried) + "\n" + RASTERIZER_HELP)
+        with Image.open(mask) as im:
+            alpha = im.convert("RGBA").getchannel("A")
+        out = Image.new("LA", alpha.size, 255)
+        out.putalpha(alpha)
+        out.save(mask, optimize=True)
+        made += 1
+    print(f"Pre-rendered {made} icon(s) into {ICON_PNG_DIR}")
 
 
 # ----------------------------------------------------------------------------
@@ -1273,15 +1360,25 @@ class Deck:
 def main():
     if len(sys.argv) < 2 or sys.argv[1] in ("-h", "--help"):
         print(__doc__)
-        sys.exit(2)
+        sys.exit(0 if len(sys.argv) > 1 else 2)
+    if sys.argv[1] == "--prerender-icons":
+        prerender_icons()
+        return
     check_only = "--check-only" in sys.argv
     argv = [a for a in sys.argv[1:] if a != "--check-only"]
+    if not argv:
+        raise SystemExit("Give the path of a slides.json file. See --help.")
     src = os.path.abspath(argv[0])
+    if not os.path.isfile(src):
+        raise SystemExit(f"File not found: {src}")
     out_dir = tempfile.mkdtemp(prefix="slides_check_") if check_only else (
         os.path.abspath(argv[1]) if len(argv) > 1 else os.path.dirname(src))
     os.makedirs(out_dir, exist_ok=True)
-    with open(src, encoding="utf-8") as f:
-        spec = json.load(f)
+    try:
+        with open(src, encoding="utf-8-sig") as f:
+            spec = json.load(f)
+    except json.JSONDecodeError as e:
+        raise SystemExit(f"{src} is not valid JSON: {e}")
     spec["_path"] = src
     if spec.get("theme", "navy") not in THEMES:
         raise SystemExit(f"theme must be one of: {', '.join(THEMES)}")
@@ -1299,6 +1396,10 @@ def main():
                         if r.text.strip() and r.font.size is not None and r.font.size.pt < SZ_BODY:
                             err(si, f"Text at {r.font.size.pt:g} pt is below the 24 pt floor: \"{r.text[:40]}\"")
     if ERRORS:
+        if _warned_font:
+            print("NOTE: Arial (or Liberation Sans) was not found on this machine, so text widths are rough\n"
+                  "estimates and the 'does not fit' errors below may be false. Install the font and run again\n"
+                  "(Debian, Ubuntu: sudo apt install fonts-liberation; Fedora: sudo dnf install liberation-sans-fonts).\n")
         print("ERRORS (nothing written):")
         for e in ERRORS:
             print("  -", e)

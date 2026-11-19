@@ -4,7 +4,7 @@
 
 You give Claude one lesson. Claude plans the deck, writes every slide as data, builds the `.pptx` with a Python script that refuses to break the rules (nothing under 24 pt, at most 6 lines, no orphan words, no clipped text, three colours, a visual on every slide), renders every slide to an image, looks at the result and fixes it before handing it over.
 
-It works in Claude Code, the Claude desktop and web apps, and the Claude Agent SDK. For live classes, workshops, corporate training and self-paced video courses on Udemy, Teachable, Coursera, Thinkific or any LMS. Any language. MIT licensed.
+It is built for and tested in Claude Code, where Claude runs the scripts on your own machine. The same folder loads as a skill in the Claude desktop and web apps and in the Claude Agent SDK; what it can do there depends on the tools that environment has (see [Install](#install)). For live classes, workshops, corporate training and self-paced video courses on Udemy, Teachable, Coursera, Thinkific or any LMS. Any language. MIT licensed.
 
 ![Contact sheet of the example deck: 17 slides in a navy theme with amber accents, icons, cards, a process timeline, a native column chart, a table and pause-question slides](examples/M04-L02-script-a-video-lesson/preview/contact-sheet.jpg)
 
@@ -38,7 +38,7 @@ One folder per lesson:
 | `slides.json` | The single source of the deck: every slide as data. Edit it and rebuild, never style slides by hand |
 | `<lesson>.pptx` | A 16:9 PowerPoint deck: Arial, a three-colour theme, Lucide icons, native editable charts and tables, a progress bar, the narration in each slide's speaker notes |
 | `<lesson>.video-script.md` | The hand-over file for video: per slide, the on-screen text, production notes (reveals, circles, pauses), narration written for text-to-speech, and seconds; plus an overview table and a coverage table per video |
-| `_preview/slide-NN.png` | Every slide rendered at 1920x1080, and a contact sheet, so Claude (and you) check the real result |
+| `_preview/slide-NN.png` | Every slide rendered at 1920x1080, and `_preview/contact-sheet.png`, so Claude (and you) check the real result |
 | `<lesson>.preview.mp4` | Optional: a slideshow video at the scripted timings, silent or with one audio file per slide |
 
 A slide in `slides.json` looks like this:
@@ -69,7 +69,19 @@ A slide in `slides.json` looks like this:
 
 ## Install
 
-Run these from the folder of your course project. Each block clones the skill, makes a Python virtual environment `.venv` inside the project and installs the requirements into it, so nothing touches your system Python. The skill tells Claude to use `.venv` when it finds one.
+**Before you start** you need three things. Check each one in a terminal:
+
+| You need | Check | Get it |
+|---|---|---|
+| Git | `git --version` | [git-scm.com/downloads](https://git-scm.com/downloads), or `winget install --id Git.Git -e` on Windows |
+| Python 3.9 or newer | `python --version` on Windows, `python3 --version` on macOS and Linux | [python.org/downloads](https://www.python.org/downloads/), or `winget install --id Python.Python.3.12 -e` on Windows. On Debian and Ubuntu also run `sudo apt install python3-venv`, or the `venv` line below fails |
+| Claude Code | `claude --version` | [Claude Code setup guide](https://docs.claude.com/en/docs/claude-code/setup) |
+
+With these three the deck and the video script build. The preview images need LibreOffice and Poppler as well, see [Requirements](#requirements) below.
+
+Run the commands from the folder of your course project. Each block clones the skill, makes a Python virtual environment `.venv` inside the project and installs the requirements into it, so nothing touches your system Python. The skill tells Claude to use `.venv` when it finds one.
+
+On Windows use the PowerShell blocks in PowerShell. In Git Bash use the macOS and Linux blocks with two changes: `python` in place of `python3`, and `.venv/Scripts/python.exe` in place of `.venv/bin/python`.
 
 **Claude Code (personal, all projects)**
 
@@ -111,17 +123,32 @@ Already have a `.venv` from another skill? Skip the `venv` line and install into
 
 **Claude desktop or web app**
 
-Download `lesson-slide-designer.skill` from the [latest release](https://github.com/chuonglife/lesson-slide-designer-skill/releases/latest) and add it under Settings, Capabilities, Skills.
+Download `lesson-slide-designer.skill` from the [latest release](https://github.com/chuonglife/lesson-slide-designer-skill/releases/latest) then:
 
-**Requirements**: Python 3.9+ with `python-pptx`, `Pillow`, `lxml` and `cairosvg` (installed by `requirements.txt`; `sharp-cli`, `rsvg-convert` or Inkscape also work for icons). To render the preview images: LibreOffice and Poppler (`pdftoppm`). For the optional preview video: `ffmpeg`.
+1. In Settings, Capabilities, turn on "Code execution and file creation". The skill runs Python scripts, so it needs it. On Team and Enterprise plans an owner may have to allow skills first.
+2. Open Customize, Skills, press "+", choose "Create skill", then "Upload a skill", and pick the file.
 
-**LibreOffice and Poppler** turn the deck into preview images. Without them the deck still builds, but neither you nor Claude can look at the slides, so install both.
+Menu names in the app change now and then. If yours differ, see [Using Skills in Claude](https://support.claude.com/en/articles/12512180-using-skills-in-claude).
+
+There the scripts run in Claude's own code sandbox, not on your computer, so the install blocks above do not apply. Building the deck needs Python with `python-pptx`, `Pillow` and `lxml` in that sandbox. Rendering the preview images needs LibreOffice and Poppler in it. This path is not tested yet: if a tool is missing, Claude tells you which one, and you still get `slides.json` to build on your own machine with Claude Code.
+
+### Requirements
+
+**To build the deck and the video script**: Python 3.9 or newer with `python-pptx`, `Pillow` and `lxml`. `requirements.txt` installs the three, and nothing else is needed. The 125 icons ship already rendered as PNG and are coloured with Pillow, so there is no SVG tool to install.
+
+**To render the preview images**: LibreOffice and Poppler. LibreOffice turns the `.pptx` into a PDF, and Poppler's `pdftoppm` turns each PDF page into a 1920x1080 PNG. Without them the deck still builds, but neither you nor Claude can look at the slides, and the [Lesson Video Producer](https://github.com/chuonglife/lesson-video-producer-skill) skill has no slide images to work from. Install both.
+
+**For the optional preview video**: `ffmpeg` (with `ffprobe`), for example `winget install --id Gyan.FFmpeg -e`, `brew install ffmpeg` or `sudo apt install ffmpeg`.
+
+**Only if you add your own SVG icon**: one SVG rasterizer. The build tries `resvg-py` (`pip install resvg-py`, Python 3.10 or newer, nothing else to install), then `cairosvg` (needs the Cairo library on the machine), then `sharp-cli`, `rsvg-convert` and Inkscape, and tells you why each one failed.
+
+Install LibreOffice and Poppler:
 
 | System | Command |
 |---|---|
 | Windows | `winget install --id TheDocumentFoundation.LibreOffice -e` and `winget install --id oschwartz10612.Poppler -e` |
 | macOS (Homebrew) | `brew install --cask libreoffice` and `brew install poppler` |
-| Debian, Ubuntu | `sudo apt install libreoffice-impress poppler-utils` |
+| Debian, Ubuntu | `sudo apt install libreoffice-impress poppler-utils python3-venv fonts-liberation` |
 | Fedora | `sudo dnf install libreoffice-impress poppler-utils` |
 
 Then close and reopen the terminal (and Claude Code) so the new PATH is picked up, and check:
@@ -132,7 +159,7 @@ pdftoppm -v
 
 On Windows, winget's Poppler package unpacks a zip and adds its `bin` folder to PATH; if `pdftoppm -v` still says "not recognized" after a new terminal, add the folder that holds `pdftoppm.exe` (under `%LOCALAPPDATA%\Microsoft\WinGet\Packages\oschwartz10612.Poppler_...\poppler-<version>\Library\bin`) to your user PATH by hand. LibreOffice does not need to be on PATH: `render_slides.py` finds it in its usual install folder (`C:\Program Files\LibreOffice`, `/Applications/LibreOffice.app`, `/usr/bin`).
 
-**Fonts.** Decks use Arial, and the script measures every line with the real Arial font file to decide what fits. Windows and macOS have Arial already. On Linux install the Microsoft core fonts (`sudo apt install ttf-mscorefonts-installer`) or Liberation Sans, which has the same widths (`sudo apt install fonts-liberation`; Fedora: `liberation-sans-fonts`). Without either, the build warns "Arial (or Liberation Sans) not found" and the fit checks are only estimates. To use a brand font instead, see the FAQ.
+**Fonts.** Decks use Arial, and the script measures every line with the real Arial font file to decide what fits. Windows and macOS have Arial already. On Linux install the Microsoft core fonts (`sudo apt install ttf-mscorefonts-installer`) or Liberation Sans, which has the same widths (`sudo apt install fonts-liberation`; Fedora: `liberation-sans-fonts`). On Linux this is not optional: without either font the widths are rough estimates, and the build can refuse a deck that fits (it then says so above the errors). To use a brand font instead, see the FAQ.
 
 ## Use it
 
@@ -260,7 +287,7 @@ No. Any lesson source works: a lesson plan, a script, a textbook chapter, notes.
 
 ### Can I use my brand colours or fonts?
 
-Add a theme to `THEMES` in `scripts/build_slides.py` (background, text, accent, card, muted). The contrast check tells you if the colours are too weak. Arial is the default because the text-fit measurement relies on known metrics; another font works if you also point the measurement at its file.
+Add a theme to `THEMES` in `scripts/build_slides.py` (background, text, accent, card, muted). The contrast check tells you if the colours are too weak. Arial is the default because the text-fit measurement relies on known metrics. For another font, change two things near the top of `scripts/build_slides.py`: `FONT` (the font name written into the deck) and `FONT_FILES` (the regular and bold `.ttf` files used to measure the text; put your font's files first in each list). The font must also be installed on the machine that renders or shows the deck.
 
 ### Is it free?
 
@@ -281,9 +308,12 @@ scripts/render_slides.py                    .pptx -> 1920x1080 PNGs and a contac
 scripts/preview_video.py                    PNGs + timings (+ audio) -> slideshow mp4
 scripts/split_videos.py                     one lesson deck -> one deck per topic video
 templates/slides.example.json               a complete demo lesson
-assets/icons/                               126 Lucide icons (ISC)
+assets/icons/                               125 Lucide icons as SVG (ISC)
+assets/icons/png/                           the same icons rendered at 512 px, tinted by the build
 examples/                                   a built and rendered example lesson
 ```
+
+A build also leaves `_icons/` (the coloured icons of that deck) next to `slides.json`, and a render leaves the intermediate PDF in `_preview/`. Both are safe to delete. The example folder in this repository keeps a few JPG copies of the slides in `preview/` for this page; your own renders are PNG files in `_preview/`.
 
 ## Sources and credits
 

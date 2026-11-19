@@ -109,11 +109,13 @@ def split(src):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("slides")
-    ap.add_argument("--build", action="store_true")
-    ap.add_argument("--render", action="store_true")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("slides", help="the lesson-level slides.json")
+    ap.add_argument("--build", action="store_true", help="run build_slides.py on every generated deck")
+    ap.add_argument("--render", action="store_true", help="build, then render the preview images of every deck")
     a = ap.parse_args()
+    if not os.path.isfile(a.slides):
+        raise SystemExit(f"File not found: {os.path.abspath(a.slides)}")
     for p in split(os.path.abspath(a.slides)):
         if a.build or a.render:
             r = subprocess.run([sys.executable, os.path.join(HERE, "build_slides.py"), p])
