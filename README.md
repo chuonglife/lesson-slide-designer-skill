@@ -181,7 +181,7 @@ Build the slides and the video script, one video per topic, 10 minutes max each.
 ```
 
 ```
-Here is my lesson plan in Vietnamese. Make the slides in Vietnamese, plum theme.
+Here is my lesson plan in Spanish. Make the slides in Spanish, plum theme.
 ```
 
 Give your name and your site (or school, or brand) in the first request, for example "footer: Jane Doe · janedoe.com". Without them every slide reads "Your name · yoursite.com" until you change `instructor` and `contact` in `slides.json` and rebuild. Claude will remind you.
@@ -263,7 +263,7 @@ A plain request gives you a deck that looks fine in the chat and breaks in Power
 
 ### What instructional design rules does it follow?
 
-One topic per slide, text plus a visual for each idea, the 6x6 text rule, 24 pt as the smallest size, a dark background with light text, sans serif type, three colours, no meaningless animation and one slide master, from the standard for text-and-image digital learning materials taught in Vietnamese technical teacher education. On top of that, Mayer's multimedia learning principles (coherence, redundancy, contiguity, signalling, personalisation) and the video engagement findings of Guo, Kim and Rubin (2014).
+One topic per slide, text plus a visual for each idea, the 6x6 text rule, 24 pt as the smallest size, a dark background with light text, sans serif type, three colours, no meaningless animation and one slide master, from a teacher-training module on text-and-image digital learning materials (see [Sources and credits](#sources-and-credits)). On top of that, Mayer's multimedia learning principles (coherence, redundancy, contiguity, signalling, personalisation) and the video engagement findings of Guo, Kim and Rubin (2014).
 
 ### Can I edit the deck in PowerPoint or Google Slides afterwards?
 
@@ -279,7 +279,7 @@ Yes. Say the course is self-paced video. Each video becomes a cluster with its o
 
 ### What languages does it support?
 
-Any language your fonts cover. English and Vietnamese get extra narration checks (pause phrases, durations said in words, stock phrases). You can add stock-phrase lists for other languages in the script.
+Any language your fonts cover. The labels the script adds by itself and the language-specific narration checks (pause phrases, durations and quantities said in words, stock phrases) are in English only. A deck in another language gets the English labels unless you set each one on the slide (the list is in `references/slide-types.md`). The "Next lesson: " and "Source: " prefixes stay English. The English stock-phrase check and the checks that do not depend on language still run. To add a language, add an entry for its code to `DEFAULT_TEXT` and `AI_PHRASES` in `scripts/build_slides.py`.
 
 ### Do I need the other two skills?
 
@@ -317,7 +317,7 @@ A build also leaves `_icons/` (the coloured icons of that deck) next to `slides.
 
 ## Sources and credits
 
-- Nguyen Minh Khanh, *Topic 4: Developing digital learning materials, text and images* (Phát triển học liệu số dạng văn bản, hình ảnh), Institute of Technical Education, Ho Chi Minh City University of Technology and Education. The ten slide design rules and the five-step deck structure.
+- Nguyen Minh Khanh, *Topic 4: Developing digital learning materials, text and images*, Institute of Technical Education, Ho Chi Minh City University of Technology and Education. The ten slide design rules and the five-step deck structure.
 - Mayer, R. E. (2009), *Multimedia Learning* (2nd ed.), Cambridge University Press. The principles behind the narration and layout rules.
 - Guo, P. J., Kim, J., and Rubin, R. (2014), "How video production affects student engagement: An empirical study of MOOC videos", Proceedings of the First ACM Conference on Learning @ Scale.
 - Duarte, N. (2010), *Resonate*. The sparkline idea behind the rhythm breakers.
@@ -327,7 +327,7 @@ The skill was first written in Vietnamese by Chuong for his own production line 
 
 ## Contributing
 
-Issues and pull requests are welcome, especially new slide types, themes, and stock-phrase lists for other languages.
+Issues and pull requests are welcome, especially new slide types, themes, and label sets and stock-phrase lists for other languages.
 
 ## License
 

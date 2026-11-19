@@ -13,7 +13,7 @@
   "instructor": "Your name",
   "contact": "yoursite.com",                // footer: "instructor · contact"
   "footer_text": "",                        // optional: replaces the footer text on every slide except the cover
-  "language": "en",                         // any language; "en" and "vi" get extra narration checks
+  "language": "en",                         // any language; "en" gets extra narration checks
   "theme": "navy",                          // navy | light | forest | plum
   "title_case": "upper",                    // upper (default) | as-written
   "file_name": "M04-L02-lesson-name",       // name of the .pptx and .video-script.md
@@ -76,24 +76,24 @@ Limits assume 24 pt Arial on a 16:9 canvas. The script measures with the real fo
 
 Image paths are relative to `slides.json`; PNG or JPG; the build stops when an image is missing.
 
-**Text the script adds by itself.** Leave a key out and the script prints its default (from `DEFAULT_TEXT` in `scripts/build_slides.py`, by `language`; any language other than `vi` gets the English set). Know these before you write titles, or the slide says the same thing twice.
+**Text the script adds by itself.** Leave a key out and the script prints its default (from `DEFAULT_TEXT` in `scripts/build_slides.py`, by `language`; only `en` ships, so a deck in any other language gets the English text below unless you set the key). Know these before you write titles, or the slide says the same thing twice.
 
-| Slide | Key | Default, `en` | Default, `vi` | How to change it |
-|---|---|---|---|---|
-| `objectives` | `title` | Learning objectives | Mục tiêu bài học | set `title` |
-| `objectives` | `label` | By the end of this lesson you can | Học xong bài này, bạn làm được | set `label`; `""` hides it. Write the items so they follow it ("Sort ...", not "You can sort ...") |
-| `agenda` | `title` | What this lesson covers | Nội dung bài học | set `title` |
-| `agenda` | `label` | the deck's `lesson_code` | the deck's `lesson_code` | set `label`; `""` hides it |
-| `title` | `title`, `label` | `lesson_title`, `lesson_code` | same | set them on the slide |
-| `section` | `label` | Part | Phần | set `label` (the big number comes from `number`) |
-| `question` | `label` | Pause the video and answer | Tạm dừng video và trả lời | set `label`, for example "Ask the room" in a live class |
-| `summary` | `title` | Three things to remember | Ba từ khóa cần nhớ | set `title` |
-| `summary` | `label` | Summary | Tóm tắt | set `label`; `""` hides it |
-| `closing` | `label` | Do this next | Việc làm ngay sau bài này | set `label` |
-| `closing` | prefix of `next_lesson` | "Next lesson: " | "Bài tiếp theo: " | always added. Give only the name: `"next_lesson": "Write objectives with Bloom's verbs"`, not "Next lesson: Lesson 2: ...". Leave `next_lesson` out to drop the box |
-| `chart` | prefix of `source` | "Source: " | "Nguồn: " | always added; give only the source name |
+| Slide | Key | Default | How to change it |
+|---|---|---|---|
+| `objectives` | `title` | Learning objectives | set `title` |
+| `objectives` | `label` | By the end of this lesson you can | set `label`; `""` hides it. Write the items so they follow it ("Sort ...", not "You can sort ...") |
+| `agenda` | `title` | What this lesson covers | set `title` |
+| `agenda` | `label` | the deck's `lesson_code` | set `label`; `""` hides it |
+| `title` | `title`, `label` | `lesson_title`, `lesson_code` | set them on the slide |
+| `section` | `label` | Part | set `label` (the big number comes from `number`) |
+| `question` | `label` | Pause the video and answer | set `label`, for example "Ask the room" in a live class |
+| `summary` | `title` | Three things to remember | set `title` |
+| `summary` | `label` | Summary | set `label`; `""` hides it |
+| `closing` | `label` | Do this next | set `label` |
+| `closing` | prefix of `next_lesson` | "Next lesson: " | always added. Give only the name: `"next_lesson": "Write objectives with Bloom's verbs"`, not "Next lesson: Lesson 2: ...". Leave `next_lesson` out to drop the box |
+| `chart` | prefix of `source` | "Source: " | always added; give only the source name |
 
-The prefixes, and the defaults of a language you add, are changed in `DEFAULT_TEXT` (one entry per language code). `split_videos.py` writes a few slides of its own in English whatever the language: a title slide labelled "`lesson_code` · Video k/N", objectives titled "This video's objectives" with the label "By the end of this video you can", and a closing labelled "Next" with the action "Next: Video k+1, <title>". Change the objectives and closing text in `video_settings`; for the title slide, give that video its own `title` slide with a `label`.
+The prefixes are changed in `DEFAULT_TEXT`. To add a language, add an entry for its code there with the same keys. `split_videos.py` writes a few slides of its own in English whatever the language: a title slide labelled "`lesson_code` · Video k/N", objectives titled "This video's objectives" with the label "By the end of this video you can", and a closing labelled "Next" with the action "Next: Video k+1, <title>". Change the objectives and closing text in `video_settings`; for the title slide, give that video its own `title` slide with a `label`.
 
 **The footer.** Every slide except `title` carries, at the bottom, `instructor · contact` on the left (the two deck-level keys joined by " · "), the slide number "n/N" on the right, and a thin progress bar in the accent colour. The `title` slide shows `instructor · contact` centred under the visual instead. The optional deck-level key `footer_text` replaces that left-hand footer text on every slide except `title`, which keeps `instructor · contact`; use it for a series name or a copyright line. With neither key nor `footer_text` set, the footer text is empty and only the number and the bar remain. `templates/slides.example.json` and the example deck use the placeholders `"instructor": "Your name"` and `"contact": "yoursite.com"`, so a deck copied from them prints "Your name · yoursite.com" on every slide until you replace both keys and rebuild. Set them to `""` to remove the text. The course name on the title slide is set at 28 pt and steps down to the 24 pt floor only when it will not fit on one line.
 

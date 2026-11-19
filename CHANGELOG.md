@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.3.2 - 2026-11-19
+
+- **The Vietnamese language mode is removed.** `build_slides.py` no longer has a `vi` entry for the default labels and prefixes, the stock-phrase list, the stop words, the spoken numbers and durations, the word pairs kept on one line, or the "these four models" check. The structure stays, with `en` as the only entry, so another language can be added in `DEFAULT_TEXT` and `AI_PHRASES`.
+- A deck with `"language": "vi"` now behaves like any other language without an entry: English default labels and prefixes, the English stock-phrase check, and the checks that do not depend on language.
+- English output is unchanged. The template and the example deck build to the same video script, byte for byte, and the same slide text, with 0 errors and 0 warnings.
+- README, SKILL.md and the references no longer promise Vietnamese support. The table of default labels in `references/slide-types.md` lists English only. The source of the slide rules is cited by its English title.
+- Comments and docstrings are in English only, and no tracked text file holds Vietnamese text.
+
 ## v1.3.1 - 2026-11-19
 
 Fixes from an audit that followed the README on a clean machine.

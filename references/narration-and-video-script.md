@@ -11,7 +11,7 @@
 5. **Spoken language**: short and long sentences mixed, "you", no "in this lesson we will", no long hello. See `plain-human-voice.md`.
 6. **Pace**: about 150 words per minute for timing estimates (140 to 160 for English). Measure the real audio once it exists; synthetic voices are often faster. Most slides run 15 to 60 seconds; question slides add time for the learner to work.
 7. **Pauses**: a `question` slide says "pause the video" (or the equivalent in your language) in its narration, and the time the voice gives must match the `timer` label on the slide. The script stops when they disagree, because learners would see one number and hear another. Write the silence in `notes` ("Silence 3 seconds" when the learner pauses the video themselves; "Silence 40 seconds" when the video should wait).
-8. **Point backwards only at what was named.** "These four models" is fine only after the four models were named on screen or in earlier narration; otherwise listeners cannot tell what is meant. The script checks this in English and Vietnamese.
+8. **Point backwards only at what was named.** "These four models" is fine only after the four models were named on screen or in earlier narration; otherwise listeners cannot tell what is meant. The script checks this for English phrasing.
 
 ## 2. Production notes (`notes`)
 

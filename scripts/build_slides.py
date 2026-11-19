@@ -50,7 +50,7 @@ ICON_PNG_DIR = os.path.join(ICON_DIR, "png")
 # ----------------------------------------------------------------------------
 W, H = 13.333, 7.5          # 16:9 canvas in inches
 MARGIN = 0.6                # safe area from every edge
-FONT = "Arial"              # sans serif, full Latin and Vietnamese coverage, on every machine
+FONT = "Arial"              # sans serif, wide Latin coverage, on every machine
 SZ_TITLE = 36               # slide title
 SZ_BODY = 24                # the smallest size allowed anywhere on a projected slide
 SZ_CAPTION = 24             # labels, captions, sources: same floor, no exceptions
@@ -67,17 +67,14 @@ THEMES = {
     "plum":   dict(bg="2D1B4E", text="FFFFFF", accent="F9C846", card="3C2A63", muted="D5CBEA"),
 }
 
+# Text the script adds by itself, one entry per language code. Only "en" ships. A deck in any other
+# language gets the English entry until an entry for its code is added here.
 DEFAULT_TEXT = {
     "en": {"objectives_title": "Learning objectives", "objectives_label": "By the end of this lesson you can",
            "agenda_title": "What this lesson covers", "section_label": "Part", "summary_title": "Three things to remember",
            "summary_label": "Summary", "question_label": "Pause the video and answer", "closing_label": "Do this next",
            "next_lesson": "Next lesson: ", "source": "Source: ", "step": "Step", "script_title": "Video script",
            "pause_phrase": r"pause the video|pause here|hit pause"},
-    "vi": {"objectives_title": "Mục tiêu bài học", "objectives_label": "Học xong bài này, bạn làm được",
-           "agenda_title": "Nội dung bài học", "section_label": "Phần", "summary_title": "Ba từ khóa cần nhớ",
-           "summary_label": "Tóm tắt", "question_label": "Tạm dừng video và trả lời", "closing_label": "Việc làm ngay sau bài này",
-           "next_lesson": "Bài tiếp theo: ", "source": "Nguồn: ", "step": "Bước", "script_title": "Kịch bản video",
-           "pause_phrase": r"tạm dừng"},
 }
 
 ERRORS, WARNINGS = [], []
@@ -106,15 +103,9 @@ AI_PHRASES = {
            "plays a crucial role", "plays a vital role", "plays a pivotal role", "a testament to", "in conclusion",
            "embark on", "let's dive in", "dive into", "navigate the complexities", "elevate your", "holistic",
            "synergy", "paradigm shift", "robust", "leverage"],
-    "vi": ["trong bối cảnh", "đóng vai trò quan trọng", "đóng vai trò then chốt", "góp phần quan trọng",
-           "hành trình", "bứt phá", "chìa khoá", "chìa khóa", "đa dạng và phong phú", "hãy cùng", "có thể nói",
-           "nhìn chung", "điều này cho thấy", "một cách hiệu quả", "nâng tầm", "kỷ nguyên số", "không ngừng thay đổi",
-           "mở ra cơ hội", "ngày càng cao", "tóm lại", "đột phá", "độc đáo", "sẽ được trang bị", "toàn diện",
-           "tối ưu hoá", "tối ưu hóa", "trong thế giới ngày nay", "không thể phủ nhận", "đó là lý do tại sao",
-           "khám phá", "thế giới không ngừng"],
 }
-NOT_ONLY = {"en": r"not only\b.{0,80}\bbut also", "vi": r"không chỉ(?![a-zà-ỹ]).{0,80}mà còn"}
-LETTER = r"a-zà-ỹ"
+NOT_ONLY = {"en": r"not only\b.{0,80}\bbut also"}
+LETTER = "a-z\u00e0-\u1ef9"   # ASCII and accented Latin letters: a phrase never matches inside a longer word
 
 
 def check_voice(idx, text, where, lang):
@@ -134,31 +125,12 @@ def check_voice(idx, text, where, lang):
 
 
 # ----------------------------------------------------------------------------
-# Numbers spoken as words (English and Vietnamese) for timing and on-screen checks
+# Numbers spoken as words (English) for timing and on-screen checks
 # ----------------------------------------------------------------------------
 EN_NUM = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8,
           "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15,
           "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19, "twenty": 20, "thirty": 30,
           "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
-VI_NUM = {"không": 0, "một": 1, "hai": 2, "ba": 3, "bốn": 4, "tư": 4, "năm": 5, "sáu": 6, "bảy": 7, "tám": 8,
-          "chín": 9, "mười": 10, "lăm": 5}
-
-
-def _vi_tokens_to_num(tokens):
-    if not tokens:
-        return None
-    if len(tokens) == 1 and tokens[0] in VI_NUM:
-        return VI_NUM[tokens[0]]
-    if len(tokens) == 2 and tokens[0] == "mười" and tokens[1] in VI_NUM:
-        return 10 + VI_NUM[tokens[1]]
-    if len(tokens) >= 2 and tokens[0] in VI_NUM and tokens[1] == "mươi":
-        v = VI_NUM[tokens[0]] * 10
-        if len(tokens) == 3:
-            v += 1 if tokens[2] == "mốt" else VI_NUM.get(tokens[2], 0)
-        return v
-    return None
-
-
 def _en_tokens_to_num(tokens):
     if not tokens:
         return None
@@ -169,22 +141,20 @@ def _en_tokens_to_num(tokens):
 
 
 def seconds_in_text(text):
-    """Every duration said or written in a text, in seconds: '60 seconds', 'two minutes', 'hai phút'."""
+    """Every duration said or written in a text, in seconds: '60 seconds', 'two minutes'."""
     out = set()
     low = str(text).lower()
-    for m in re.finditer(r"(\d+(?:[,.]\d+)?)\s*(seconds?|secs?|minutes?|mins?|giây|phút)\b", low):
+    for m in re.finditer(r"(\d+(?:[,.]\d+)?)\s*(seconds?|secs?|minutes?|mins?)\b", low):
         v = float(m.group(1).replace(",", "."))
-        out.add(round(v * (60 if m.group(2).startswith(("min", "phút")) else 1)))
-    for m in re.finditer(r"((?:[a-zà-ỹ\-]+\s){1,3}?)(seconds?|minutes?|giây|phút)", low + " "):
+        out.add(round(v * (60 if m.group(2).startswith("min") else 1)))
+    for m in re.finditer(r"((?:[" + LETTER + r"\-]+\s){1,3}?)(seconds?|minutes?)", low + " "):
         toks = m.group(1).split()
         for n in (3, 2, 1):
             if len(toks) < n:
                 continue
             v = _en_tokens_to_num(toks[-n:])
-            if v is None:
-                v = _vi_tokens_to_num(toks[-n:])
             if v is not None:
-                out.add(v * (60 if m.group(2).startswith(("min", "phút")) else 1))
+                out.add(v * (60 if m.group(2).startswith("min") else 1))
                 break
     return out
 
@@ -206,10 +176,10 @@ def quantities_in_narration(narr):
 
 
 def pause_seconds_in_notes(notes):
-    """'Silence 120 seconds' / 'Pause 2 minutes' / 'Lặng 40 giây' in production notes -> seconds."""
+    """'Silence 120 seconds' / 'Pause 2 minutes' in production notes -> seconds."""
     total = 0
-    for m in re.finditer(r"(?:silence|pause|hold|lặng)\s+(\d+)\s*(seconds?|secs?|minutes?|giây|phút)", str(notes), re.I):
-        total += int(m.group(1)) * (60 if m.group(2).lower().startswith(("min", "phút")) else 1)
+    for m in re.finditer(r"(?:silence|pause|hold)\s+(\d+)\s*(seconds?|secs?|minutes?)", str(notes), re.I):
+        total += int(m.group(1)) * (60 if m.group(2).lower().startswith("min") else 1)
     return total
 
 
@@ -319,23 +289,16 @@ def glue_last_two(s):
     return "\n".join(out)
 
 
-# Vietnamese compounds that must not be split across two lines (joined with a non-breaking space)
-VI_COMPOUNDS = ["sơ đồ", "người học", "học viên", "mục tiêu", "kế hoạch", "bảng kiểm", "thành phần", "học liệu",
-                "bài tập", "đồ thị", "hàm số", "hai mươi", "ba mươi", "bốn mươi", "năm mươi", "chín mươi"]
-_RE_VI_COMPOUNDS = re.compile("|".join(re.escape(x) for x in sorted(VI_COMPOUNDS, key=len, reverse=True)), re.I)
-
-
-# A label and its number ("Stage 4", "Lesson 3", "Step 2") never split across two lines, in any language
-_RE_LABEL_NUM = re.compile(r"\b(?:Stage|Lesson|Video|Step|Product|Module|Track|Part|Week|Day|Unit|Task|Bài|Bước|Phần) \d+", re.I)
+# A label and its number ("Stage 4", "Lesson 3", "Step 2") never split across two lines
+_RE_LABEL_NUM = re.compile(r"\b(?:Stage|Lesson|Video|Step|Product|Module|Track|Part|Week|Day|Unit|Task) \d+", re.I)
 
 
 def keep_compounds(s, lang):
+    """Join word pairs that must stay on one line with a non-breaking space.
+    'lang' is where a language you add can glue its own compounds."""
     if not isinstance(s, str):
         return s
-    s = _RE_LABEL_NUM.sub(lambda m: m.group(0).replace(" ", NBSP), s)
-    if lang == "vi":
-        s = _RE_VI_COMPOUNDS.sub(lambda m: m.group(0).replace(" ", NBSP), s)
-    return s
+    return _RE_LABEL_NUM.sub(lambda m: m.group(0).replace(" ", NBSP), s)
 
 
 def fits(text, width_in, height_in, pt, spacing=1.2, bold=False):
@@ -1135,9 +1098,7 @@ class Deck:
     RHYTHM_BREAKERS = {"question", "key-message", "image", "big-numbers", "chart", "section"}
     READ_EVERY_ITEM = ("summary", "two-column")
     STOP = {"en": set("the a an and or of to in on for with is are be this that it as at by from your you we our "
-                      "they their its then so but not do does did can will".split()),
-            "vi": set("và là của cho có các những một này đó khi thì mà với trong để được không cả như hay hoặc "
-                      "cũng đã sẽ ở từ tới đến về bị rồi nên vì nếu".split())}
+                      "they their its then so but not do does did can will".split())}
 
     def build(self):
         prev, streak, used = None, 0, set()
@@ -1254,7 +1215,7 @@ class Deck:
 
     def _content_words(self, text):
         stop = self.STOP.get(self.lang, self.STOP["en"])
-        return [w for w in re.findall(r"[0-9a-zà-ỹ]+", str(text).lower()) if w not in stop and (len(w) > 1 or w.isdigit())]
+        return [w for w in re.findall("[0-9" + LETTER + "]+", str(text).lower()) if w not in stop and (len(w) > 1 or w.isdigit())]
 
     def check_items_read(self):
         """On slides whose items appear one by one with the voice, the narration of THAT slide must read every item."""
@@ -1290,19 +1251,12 @@ class Deck:
                 spoken = seconds_in_text(narr)
                 if on_screen and not (on_screen & spoken):
                     err(self.idx, f"Timer label \"{d['timer']}\" does not match the time the narration gives ({sorted(spoken) or 'none'} s): learners see one number and hear another")
-        if self.lang == "vi":
-            # "bốn chữ này" only after "bốn chữ" has been named (earlier narration or on screen)
-            on_screen = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
-            for m in re.finditer(r"(một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười) (chữ|từ khóa|từ|mô hình|thành tố|bước|tiêu chí|ý|phiếu|kiểu) (này|đó|kia|ấy)(?![a-zà-ỹ])", low):
-                phrase = f"{m.group(1)} {m.group(2)}"
-                if phrase not in self._said + " " + low[:m.start()] + " " + on_screen:
-                    err(self.idx, f"\"{m.group(0)}\" points back at \"{phrase}\" before it was named: listeners cannot tell what it refers to")
-        else:
-            on_screen = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
-            for m in re.finditer(r"\b(these|those) (two|three|four|five|six|seven|eight|nine|ten) (words|terms|models|steps|criteria|ideas|parts|questions)\b", low):
-                phrase = f"{m.group(2)} {m.group(3)}"
-                if phrase not in self._said + " " + low[:m.start()] + " " + on_screen:
-                    err(self.idx, f"\"{m.group(0)}\" points back at \"{phrase}\" before they were named: listeners cannot tell what it refers to")
+        # "these four models" only after "four models" has been named (earlier narration or on screen)
+        on_screen = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
+        for m in re.finditer(r"\b(these|those) (two|three|four|five|six|seven|eight|nine|ten) (words|terms|models|steps|criteria|ideas|parts|questions)\b", low):
+            phrase = f"{m.group(2)} {m.group(3)}"
+            if phrase not in self._said + " " + low[:m.start()] + " " + on_screen:
+                err(self.idx, f"\"{m.group(0)}\" points back at \"{phrase}\" before they were named: listeners cannot tell what it refers to")
         self._said += " " + low
         # A quantity the learner must act on (minutes, questions, files...) is spoken but appears nowhere on the slide
         if d.get("type") in ("objectives", "cards", "key-message", "question", "big-numbers", "table", "summary", "closing"):
@@ -1316,7 +1270,7 @@ class Deck:
                                        "anything the learner must do or reach has to be written on screen")
         # "required" / "mandatory" said aloud must also be visible on the slide
         shown_all = json.dumps({k: v for k, v in d.items() if k not in ("narration", "notes")}, ensure_ascii=False).lower()
-        if d.get("type") in ("cards", "table", "process", "two-column", "key-message", "summary")                 and re.search(r"\b(mandatory|required|bắt buộc)\b", low) and not re.search(r"\b(mandatory|required|bắt buộc)\b", shown_all):
+        if d.get("type") in ("cards", "table", "process", "two-column", "key-message", "summary")                 and re.search(r"\b(mandatory|required)\b", low) and not re.search(r"\b(mandatory|required)\b", shown_all):
             warn(self.idx, "The narration says the item is required or mandatory but the slide never does: a shortened card lost that part")
         for line in narr.splitlines():
             line = line.strip()

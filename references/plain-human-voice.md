@@ -12,9 +12,7 @@ Not allowed: the em dash (U+2014), the en dash (U+2013) and their relatives (U+2
 
 English: delve, in today's fast-paced world, ever-evolving, tapestry, game-changer, unlock the power, unleash, harness the power, seamless, cutting-edge, state-of-the-art, it is worth noting, plays a crucial (vital, pivotal) role, a testament to, in conclusion, embark on, let's dive in, dive into, navigate the complexities, elevate your, holistic, synergy, paradigm shift, robust, leverage, and "not only... but also".
 
-Vietnamese: the common Vietnamese equivalents ("trong bối cảnh", "đóng vai trò quan trọng", "không chỉ... mà còn", "hãy cùng khám phá", "tóm lại" and others; full list in `scripts/build_slides.py`).
-
-Add your own list for other languages in `AI_PHRASES` inside the script.
+Only the English list ships, and it runs on every deck whatever its `language`. Add a list for another language in `AI_PHRASES` inside the script, under that language's code.
 
 ## 3. Structures that give the AI voice away (check by hand)
 

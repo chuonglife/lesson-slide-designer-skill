@@ -40,7 +40,8 @@ from build_slides import WPM, pause_seconds_in_notes  # noqa: E402
 
 
 def slugify(t):
-    t = unicodedata.normalize("NFD", t.replace("đ", "d").replace("Đ", "D"))
+    # ASCII folding for file names: strip accents; d with stroke (U+0111, U+0110) has no NFD form, so map it by hand
+    t = unicodedata.normalize("NFD", t.replace("\u0111", "d").replace("\u0110", "D"))
     t = "".join(c for c in t if unicodedata.category(c) != "Mn").lower()
     return re.sub(r"[^a-z0-9]+", "-", t).strip("-")
 
